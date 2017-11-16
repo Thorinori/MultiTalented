@@ -4,7 +4,7 @@
 ## Author: Thorinori
 ## SavedVariables: MultiTalented_Settings
 ## SavedVariablesPerCharacter: SavedTalents
-## Version: 0.2
+## Version: 0.5
 ## DefaultState: enabled
 ## LoadPriority: 1
 

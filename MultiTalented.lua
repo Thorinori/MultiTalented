@@ -10,9 +10,37 @@ local DebugMode = false
 
 --Function Definitions--
 
-local function wait(s)
-	local endtime = time() + s
-	repeat until time() > endtime
+--Wait from http://wowwiki.wikia.com/wiki/USERAPI_wait --
+
+local waitTable = {};
+local waitFrame = nil;
+
+local function MultiTalented__wait(delay, func, ...)
+  if(type(delay)~="number" or type(func)~="function") then
+    return false;
+  end
+  if(waitFrame == nil) then
+    waitFrame = CreateFrame("Frame","WaitFrame", UIParent);
+    waitFrame:SetScript("onUpdate",function (self,elapse)
+      local count = #waitTable;
+      local i = 1;
+      while(i<=count) do
+        local waitRecord = tremove(waitTable,i);
+        local d = tremove(waitRecord,1);
+        local f = tremove(waitRecord,1);
+        local p = tremove(waitRecord,1);
+        if(d>elapse) then
+          tinsert(waitTable,i,{d-elapse,f,p});
+          i = i + 1;
+        else
+          count = count - 1;
+          f(unpack(p));
+        end
+      end
+    end);
+  end
+  tinsert(waitTable,{delay,func,{...}});
+  return true;
 end
 
 local function my_print(str)
@@ -67,7 +95,8 @@ local function SET_CURRENT(msg)
 		else
 			if(GetSpecialization(false, false, 1) ~= saved_talents[msg]["spec"]) then
 				SetSpecialization(saved_talents[msg]["spec"])
-				wait(6)
+				MultiTalented__wait(6, SET_CURRENT, msg)
+				return
 			end
 			for i = 1, GetMaxTalentTier() do	
 				if(saved_talents[msg][i] ~= nil) then
