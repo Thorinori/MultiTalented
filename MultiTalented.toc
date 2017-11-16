@@ -1,0 +1,14 @@
+## Interface: 70300
+## Title: MultiTalented
+## Notes: Talent Profiles and Quick Swapping
+## Author: Thorinori
+## SavedVariables: MultiTalented_Settings
+## SavedVariablesPerCharacter: SavedTalents
+## Version: 0.2
+## DefaultState: enabled
+## LoadPriority: 1
+
+libs\LibStub\LibStub.lua
+libs\Ace3\AceGUI-3.0\AceGUI-3.0.lua
+
+MultiTalented.lua
