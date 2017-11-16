@@ -19,8 +19,6 @@ local function my_print(str)
 	print("[MultiTalented]: ".. tostring(str))
 end
 
-
-
 local function CHECK_CURRENT()
 	current_talents = {}
 	current_talents["spec"] = GetSpecialization(false, false, 1)
