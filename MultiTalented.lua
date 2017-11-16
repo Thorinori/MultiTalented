@@ -6,7 +6,7 @@ local AceGUI = LibStub("AceGUI-3.0")
 
 local settings
 local saved_talents
-local DebugMode = true
+local DebugMode = false
 
 --Function Definitions--
 
