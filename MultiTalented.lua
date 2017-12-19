@@ -7,6 +7,7 @@ local AceGUI = LibStub("AceGUI-3.0")
 local settings
 local saved_talents
 local DebugMode = false
+local version = 0.5
 
 --Function Definitions--
 
@@ -80,27 +81,27 @@ local function SAVE_CURRENT(msg)
 			end
 		end
 		]]--
-		saved_talents[msg] = current_talents
-		my_print("Talents saved as: ".. msg)
+		saved_talents[profile_name] = current_talents
+		my_print("Talents saved as: ".. profile_name)
 	end
 end
 
 
-local function SET_CURRENT(msg)
+local function SET_CURRENT(profile_name, profile_type)
 	if msg == "" then
 		my_print("Error! You must include a name for this profile!")
 	else
-		if saved_talents[msg] == nil then
+		if saved_talents[profile_name] == nil then
 			my_print("This profile does not exist")
 		else
-			if(GetSpecialization(false, false, 1) ~= saved_talents[msg]["spec"]) then
-				SetSpecialization(saved_talents[msg]["spec"])
-				MultiTalented__wait(6, SET_CURRENT, msg)
+			if(GetSpecialization(false, false, 1) ~= saved_talents[profile_name]["spec"]) then
+				SetSpecialization(saved_talents[profile_name]["spec"])
+				MultiTalented__wait(6, SET_CURRENT, profile_name)
 				return
 			end
 			for i = 1, GetMaxTalentTier() do	
-				if(saved_talents[msg][i] ~= nil) then
-					LearnTalent(saved_talents[msg][i])
+				if(saved_talents[profile_name][i] ~= nil) then
+					LearnTalent(saved_talents[profile_name][i])
 				end
 			end
 			my_print("Talents set!")
@@ -108,20 +109,20 @@ local function SET_CURRENT(msg)
 	end
 end
 
-local function REMOVE_PROFILE(msg)
+local function REMOVE_PROFILE(profile_name)
 	if msg == "" then
 		my_print("Error! You must include a name for this profile!")
 	else
-		if saved_talents[msg] == nil then
+		if saved_talents[profile_name] == nil then
 			my_print("Error! This profile doesn't exist!")
 		else
-			saved_talents[msg] = nil
-			my_print("Profile " .. msg .. " has been deleted!")
+			saved_talents[profile_name] = nil
+			my_print("Profile " .. profile_name .. " has been deleted!")
 		end
 	end
 end
 
-local function LIST_PROFILES(msg)
+local function LIST_PROFILES()
 	my_print("--------Talent Profiles--------")
 	local keys = {}
 	for k,_ in pairs(saved_talents) do
@@ -139,10 +140,10 @@ local function DEBUGMODE()
 end
 
 
-local function MAKE_LIST(scroll)
+local function MAKE_LIST(scroll, profile_list)
 	scroll:ReleaseChildren()
 	local keys = {}
-	for k,_ in pairs(saved_talents) do
+	for k,_ in pairs(saved_talents[profile_list]) do
 		if k ~= "exists" then table.insert(keys, k) end
 	end
 	table.sort(keys)
@@ -175,7 +176,7 @@ end
 
 local function MAKEWIN(msg, editbox)	
 	if DebugMode then
-		my_print("Making window")
+		my_<F10>print("Making window")
 	end
 	--message((msg == "") and "Hello World" or msg)
 	local frame = AceGUI:Create("Frame")
@@ -213,7 +214,7 @@ local function MAKEWIN(msg, editbox)
 	save_bar:AddChild(save)
 	frame:AddChild(save_bar, scroll_pane)
 	
-	MAKE_LIST(scroll)
+	MAKE_LIST(scroll, "personal")
 end
 
 --Load Settings--
@@ -231,11 +232,11 @@ local function GEN_SETTINGS()
 			if DebugMode then my_print("Addon Loaded") end
 			if MultiTalented_Settings == nil then
 				if DebugMode then my_print("Making Settings...") end
-				MultiTalented_Settings = {exists = 1}
+				MultiTalented_Settings = {exists = 1, prev_version = version}
 			end
 			if SavedTalents == nil then
 				if DebugMode then my_print("Making Talent storage...") end
-				SavedTalents = {exists = 1}
+				SavedTalents = {exists = 1, class = {}, personal = {}}
 			end 
 
 			if MultiTalented_Settings["exists"] == 1 then
@@ -245,7 +246,13 @@ local function GEN_SETTINGS()
 			
 			if SavedTalents["exists"] == 1 then
 				if DebugMode then my_print("Found talents!") end
-				saved_talents = SavedTalents
+				
+				if settings["prev_version"] ~= version then
+					settings["prev_version"] = version
+					saved_talents["personal"] = SavedTalents
+				else
+					saved_talents = SavedTalents
+				end
 			end
 		elseif event == "PLAYER_LOGOUT" then
 			if DebugMode then my_print("Saving settings") end
