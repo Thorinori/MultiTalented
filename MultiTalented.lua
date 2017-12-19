@@ -236,7 +236,7 @@ local function GEN_SETTINGS()
 			end
 			if SavedTalents == nil then
 				if DebugMode then my_print("Making Talent storage...") end
-				SavedTalents = {exists = 1, class = {}, personal = {}}
+				SavedTalents = {exists = 1}
 			end 
 
 			if MultiTalented_Settings["exists"] == 1 then
@@ -247,18 +247,19 @@ local function GEN_SETTINGS()
 			if SavedTalents["exists"] == 1 then
 				if DebugMode then my_print("Found talents!") end
 				
-				if settings["prev_version"] ~= version then
+				if settings["prev_version"] ~= version or SavedTalents["personal"] == nil then
 					settings["prev_version"] = version
-					saved_talents["personal"] = SavedTalents
-				else
-					saved_talents = SavedTalents
+					Saved_Talents["personal"] = SavedTalents
+					Saved_Talents["class"] = MultiTalented_Class_Profiles
 				end
+				saved_talents = SavedTalents
 			end
 		elseif event == "PLAYER_LOGOUT" then
 			if DebugMode then my_print("Saving settings") end
 			MultiTalented_Settings = settings
 			if DebugMode then my_print("Saving talents") end
 			SavedTalents = saved_talents
+			MultiTalented_Class_Profiles = SavedTalents["class"]
 		end
 	end
 	frame:SetScript("OnEvent", OnEvent)
@@ -286,6 +287,8 @@ local function GEN_COMMANDS()
 	SLASH_MTLISTPROFILES1 = '/mt_list'
 	SlashCmdList["MTLISTPROFILES"] = LIST_PROFILES
 
+	SLASH_MTVERSION1 = '/mt_version'
+	SlashCmdList["MTVERSION"] = function() my_print(("Current Version: " .. version)) end
 end
 
 --Function Calls--
