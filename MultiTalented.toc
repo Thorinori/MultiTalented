@@ -2,9 +2,9 @@
 ## Title: MultiTalented
 ## Notes: Talent Profiles and Quick Swapping
 ## Author: Thorinori
-## SavedVariables: MultiTalented_Settings
+## SavedVariables: MultiTalented_Settings, MultiTalented_Class_Profiles
 ## SavedVariablesPerCharacter: SavedTalents
-## Version: 0.5
+## Version: 0.6.5
 ## DefaultState: enabled
 ## LoadPriority: 1
 

@@ -7,6 +7,7 @@ local AceGUI = LibStub("AceGUI-3.0")
 local settings
 local saved_talents
 local DebugMode = false
+local version = '0.6.5'
 
 --Function Definitions--
 
@@ -64,7 +65,7 @@ local function CHECK_CURRENT()
 	return current_talents
 end
 
-local function SAVE_CURRENT(msg)
+local function SAVE_CURRENT(profile_name, profile_type)
 	if msg == "" then
 		my_print("Error! you must include a name for this profile!")
 	else
@@ -80,27 +81,27 @@ local function SAVE_CURRENT(msg)
 			end
 		end
 		]]--
-		saved_talents[msg] = current_talents
-		my_print("Talents saved as: ".. msg)
+		saved_talents[profile_type][profile_name] = current_talents
+		my_print("Talents saved as: ".. profile_name)
 	end
 end
 
 
-local function SET_CURRENT(msg)
+local function SET_CURRENT(profile_name, profile_type)
 	if msg == "" then
 		my_print("Error! You must include a name for this profile!")
 	else
-		if saved_talents[msg] == nil then
+		if saved_talents[profile_type][profile_name] == nil then
 			my_print("This profile does not exist")
 		else
-			if(GetSpecialization(false, false, 1) ~= saved_talents[msg]["spec"]) then
-				SetSpecialization(saved_talents[msg]["spec"])
-				MultiTalented__wait(6, SET_CURRENT, msg)
+			if(GetSpecialization(false, false, 1) ~= saved_talents[profile_type][profile_name]["spec"]) then
+				SetSpecialization(saved_talents[profile_type][profile_name]["spec"])
+				MultiTalented__wait(6, SET_CURRENT, profile_name, profile_type)
 				return
 			end
 			for i = 1, GetMaxTalentTier() do	
-				if(saved_talents[msg][i] ~= nil) then
-					LearnTalent(saved_talents[msg][i])
+				if(saved_talents[profile_type][profile_name][i] ~= nil) then
+					LearnTalent(saved_talents[profile_type][profile_name][i])
 				end
 			end
 			my_print("Talents set!")
@@ -108,20 +109,20 @@ local function SET_CURRENT(msg)
 	end
 end
 
-local function REMOVE_PROFILE(msg)
+local function REMOVE_PROFILE(profile_name,profile_type)
 	if msg == "" then
 		my_print("Error! You must include a name for this profile!")
 	else
-		if saved_talents[msg] == nil then
+		if saved_talents[profile_type][profile_name] == nil then
 			my_print("Error! This profile doesn't exist!")
 		else
-			saved_talents[msg] = nil
-			my_print("Profile " .. msg .. " has been deleted!")
+			saved_talents[profile_type][profile_name] = nil
+			my_print("Profile " .. profile_name .. " has been deleted!")
 		end
 	end
 end
 
-local function LIST_PROFILES(msg)
+local function LIST_PROFILES()
 	my_print("--------Talent Profiles--------")
 	local keys = {}
 	for k,_ in pairs(saved_talents) do
@@ -139,10 +140,10 @@ local function DEBUGMODE()
 end
 
 
-local function MAKE_LIST(scroll)
+local function MAKE_LIST(scroll, profile_type)
 	scroll:ReleaseChildren()
 	local keys = {}
-	for k,_ in pairs(saved_talents) do
+	for k,_ in pairs(saved_talents[profile_type]) do
 		if k ~= "exists" then table.insert(keys, k) end
 	end
 	table.sort(keys)
@@ -156,13 +157,13 @@ local function MAKE_LIST(scroll)
 		local choose = AceGUI:Create("Button")
 		local remove = AceGUI:Create("Button")
 		local save = AceGUI:Create("Button")
-		save:SetCallback("OnClick", function(widget, call) SAVE_CURRENT(v); MAKE_LIST(scroll); end)
-		save:SetText("Overwrite")
+		save:SetCallback("OnClick", function(widget, call) SAVE_CURRENT(v,profile_type); MAKE_LIST(scroll,profile_type); end)
+		save:SetText("Overwrite Profile")
 		profile:SetText(v)
 		choose:SetText("Select Profile")
-		choose:SetCallback("OnClick", function(widget, call) SET_CURRENT(v); MAKE_LIST(scroll) end)
+		choose:SetCallback("OnClick", function(widget, call) SET_CURRENT(v,profile_type); MAKE_LIST(scroll,profile_type) end)
 		remove:SetText("Remove Profile")
-		remove:SetCallback("OnClick", function(widget, call) REMOVE_PROFILE(v); MAKE_LIST(scroll)  end)
+		remove:SetCallback("OnClick", function(widget, call) REMOVE_PROFILE(v, profile_type); MAKE_LIST(scroll,profile_type)  end)
 		profile_bar:AddChild(icon)
 		profile_bar:AddChild(profile)
 		profile_bar:AddChild(choose)
@@ -173,22 +174,8 @@ local function MAKE_LIST(scroll)
 
 end
 
-local function MAKEWIN(msg, editbox)	
-	if DebugMode then
-		my_print("Making window")
-	end
-	--message((msg == "") and "Hello World" or msg)
-	local frame = AceGUI:Create("Frame")
-	frame:SetTitle("Talent Profile Picker")
-	--frame:SetStatusText((msg == "") and "Hello World" or msg)
-	frame:SetLayout("Flow")
-	
-	--[[
-	local head = AceGUI:Create("Heading")
-	head:SetText("Talent Profiles")
-	frame:AddChild(head)
-	]]--
-	
+local function MAKEWIN(frame, profile_type)
+
 	local scroll_pane = AceGUI:Create("InlineGroup")
 	scroll_pane:SetFullWidth(true)
 	scroll_pane:SetFullHeight(true)
@@ -208,12 +195,45 @@ local function MAKEWIN(msg, editbox)
 	local save_bar = AceGUI:Create("SimpleGroup")
 	save_bar:SetFullWidth(true)
 	save_bar:SetLayout("Flow")
-	save:SetCallback("OnClick", function(widget, call) SAVE_CURRENT(new_name:GetText()); MAKE_LIST(scroll); new_name:SetText("") end)
+	save:SetCallback("OnClick", function(widget, call) SAVE_CURRENT(new_name:GetText(), profile_type); MAKE_LIST(scroll, profile_type); new_name:SetText("") end)
 	save_bar:AddChild(new_name)
 	save_bar:AddChild(save)
 	frame:AddChild(save_bar, scroll_pane)
 	
-	MAKE_LIST(scroll)
+	MAKE_LIST(scroll, profile_type)
+
+end
+
+local function SelectGroup(container, event, group)
+	container:ReleaseChildren()
+	if group == "personal_tab" then
+		MAKEWIN(container, "personal")
+	elseif group == "class_tab" then
+		MAKEWIN(container, "class")
+	end
+
+end
+
+local function MAKEFRAME(msg, editbox)	
+	if DebugMode then
+		my_print("Making window")
+	end
+	--message((msg == "") and "Hello World" or msg)
+	local frame = AceGUI:Create("Frame")
+	frame:SetTitle("MultiTalented")
+	frame:SetWidth(GetScreenWidth() * .55)
+	--frame:SetStatusText((msg == "") and "Hello World" or msg)
+	frame:SetLayout("Fill")
+	
+	local tabs = AceGUI:Create("TabGroup")
+	tabs:SetLayout("Flow")
+	tabs:SetFullWidth(true)
+	tabs:SetFullHeight(true)
+
+	tabs:SetTabs({{text="Personal Profiles", value="personal_tab"}, {text="Class Profiles", value="class_tab"}, --[[{text="Talents",value="talent_tab"}]]})
+	tabs:SetCallback("OnGroupSelected", SelectGroup)
+	tabs:SelectTab("personal_tab")
+	frame:AddChild(tabs)
 end
 
 --Load Settings--
@@ -227,11 +247,12 @@ local function GEN_SETTINGS()
 	frame:RegisterEvent("ADDON_LOADED");
 	frame:RegisterEvent("PLAYER_LOGOUT");
 	local function OnEvent(self, event, arg1)
+		_,class, _ = UnitClass("player")
 		if event == "ADDON_LOADED" and arg1 == "MultiTalented" then
 			if DebugMode then my_print("Addon Loaded") end
 			if MultiTalented_Settings == nil then
 				if DebugMode then my_print("Making Settings...") end
-				MultiTalented_Settings = {exists = 1}
+				MultiTalented_Settings = {exists = 1, prev_version = version}
 			end
 			if SavedTalents == nil then
 				if DebugMode then my_print("Making Talent storage...") end
@@ -246,12 +267,35 @@ local function GEN_SETTINGS()
 			if SavedTalents["exists"] == 1 then
 				if DebugMode then my_print("Found talents!") end
 				saved_talents = SavedTalents
+				saved_talents["class"] = MultiTalented_Class_Profiles[class]
+				if not saved_talents["class"] then saved_talents["class"] = {} end
+				if settings["prev_version"] ~= version or saved_talents["personal"] == nil then
+					settings["prev_version"] = version
+					tmp = {}
+					for k,v in pairs(saved_talents) do
+						my_print(k)
+						if not (k == "personal") and not (k == "exists") and not(k == "class")then
+							tmp[k] = {}
+							for k2, v2 in pairs(v) do
+								--table.insert(SavedTalents["personal"][k], k2, v2)
+								tmp[k][k2] = v2
+							end
+							saved_talents[k] = nil
+						end
+					end
+					saved_talents["personal"] = tmp
+					saved_talents["class"] = MultiTalented_Class_Profiles[class] or {}
+				end
 			end
 		elseif event == "PLAYER_LOGOUT" then
 			if DebugMode then my_print("Saving settings") end
 			MultiTalented_Settings = settings
 			if DebugMode then my_print("Saving talents") end
 			SavedTalents = saved_talents
+			if(not MultiTalented_Class_Profiles[class]) then MultiTalented_Class_Profiles[class] = {} end
+			for k,v in pairs(saved_talents["class"]) do
+				MultiTalented_Class_Profiles[class][k] = v
+			end
 		end
 	end
 	frame:SetScript("OnEvent", OnEvent)
@@ -262,7 +306,7 @@ end
 local function GEN_COMMANDS()
 
 	SLASH_MTWIN1 = '/mtalent'
-	SlashCmdList["MTWIN"] = MAKEWIN
+	SlashCmdList["MTWIN"] = MAKEFRAME
 
 	SLASH_MTDEBUGMODE1 = '/mt_debug'
 	SlashCmdList["MTMODE"] = DEBUGMODE
@@ -279,6 +323,8 @@ local function GEN_COMMANDS()
 	SLASH_MTLISTPROFILES1 = '/mt_list'
 	SlashCmdList["MTLISTPROFILES"] = LIST_PROFILES
 
+	SLASH_MTVERSION1 = '/mt_version'
+	SlashCmdList["MTVERSION"] = function() my_print(("Current Version: " .. version)) end
 end
 
 --Function Calls--
